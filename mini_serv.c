@@ -6,7 +6,7 @@
 /*   By: isojo-go <isojo-go@student.42urduliz.co    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/27 15:51:22 by isojo-go          #+#    #+#             */
-/*   Updated: 2023/11/27 21:05:38 by isojo-go         ###   ########.fr       */
+/*   Updated: 2023/11/27 22:36:05 by isojo-go         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,19 +64,7 @@ fd_set recvSet, sendSet, activeSet;
 
 /* ************************************************************************** */
 
-// Functions:
-
-int getClientId(int clientFd)
-{
-    int i = 0;
-    while (i < nextId)
-    {
-        if (clients[i].fd == clientFd)
-            return (i);
-        i++;
-    }
-    return (-1);
-}
+// Aux Functions:
 
 void sendAll(int senderFd, char *msg, int len)
 {
@@ -110,6 +98,18 @@ void acceptClient(void)
     nextId++;
 }
 
+int getClientId(int clientFd)
+{
+    int i = 0;
+    while (i < nextId)
+    {
+        if (clients[i].fd == clientFd)
+            return (i);
+        i++;
+    }
+    return (-1);
+}
+
 void recvCom(int clientFd)
 {
     char c;
@@ -139,7 +139,7 @@ void recvCom(int clientFd)
 
 /* ************************************************************************** */
 
-// Main:
+// Main function:
 
 int main(int argc, char **argv)
 {
