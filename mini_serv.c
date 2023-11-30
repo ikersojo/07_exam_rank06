@@ -6,7 +6,7 @@
 /*   By: isojo-go <isojo-go@student.42urduliz.co    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/27 15:51:22 by isojo-go          #+#    #+#             */
-/*   Updated: 2023/11/27 22:36:05 by isojo-go         ###   ########.fr       */
+/*   Updated: 2023/11/30 11:41:59 by isojo-go         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,13 +46,14 @@ typedef struct s_client
 {
     int fd;
     int nl;
+    int closed;
 } t_client;
 
 /* ************************************************************************** */
 
 // Global vars:
 
-#define MAX_CLIENTS 1000
+#define MAX_CLIENTS 100000 // Te exam tests at least 3000
 #define BUFFSIZE 1000000
 
 int serverFd;
@@ -84,6 +85,7 @@ void acceptClient(void)
 {
     struct sockaddr_in clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
+    bzero(&clientAddr, sizeof(clientAddr));
 
     if ((clients[nextId].fd = accept(serverFd, (struct sockaddr *)&clientAddr, &clientAddrLen)) == -1)
         fatalError();
@@ -91,6 +93,7 @@ void acceptClient(void)
     if (clients[nextId].fd > maxFd)
         maxFd = clients[nextId].fd;
     clients[nextId].nl = 1;
+    clients[nextId].closed = 0;
 
     sprintf(buff, "server: client %d just arrived\n", nextId);
     sendAll(clients[nextId].fd, buff, strlen(buff));
@@ -103,7 +106,7 @@ int getClientId(int clientFd)
     int i = 0;
     while (i < nextId)
     {
-        if (clients[i].fd == clientFd)
+        if (clients[i].fd == clientFd && clients[i].closed == 0)
             return (i);
         i++;
     }
@@ -115,6 +118,8 @@ void recvCom(int clientFd)
     char c;
     int id = getClientId(clientFd);
 
+    if (id == -1)
+        fatalError();
     int bytesRead = recv(clientFd, &c, 1, 0);
     if (bytesRead <= 0)
     {
@@ -122,6 +127,7 @@ void recvCom(int clientFd)
         sendAll(clientFd, buff, strlen(buff));
         FD_CLR(clientFd, &activeSet);
         close(clientFd);
+        clients[id].closed = 1;
     }
     else
     {
@@ -154,6 +160,14 @@ int main(int argc, char **argv)
     FD_ZERO(&recvSet);
     FD_ZERO(&sendSet);
     FD_ZERO(&activeSet);
+    int i = 0;
+    while (i < MAX_CLIENTS)
+    {
+        clients[i].fd = -2;
+        clients[i].nl = -2;
+        clients[i].closed = -2;
+        i++;
+    }
 
     // Setup Server:
     struct sockaddr_in serverAddr;
